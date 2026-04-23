@@ -89,8 +89,16 @@ Template mutation trick:
 - perturb cells frequently touched by Eq2's distinctive subterms.
 
 ---
-Output format (use exact headers without any additional text or formatting):
-VERDICT: must be exactly TRUE or FALSE (in the same line).
-REASONING: must be non-empty.
-PROOF: required if VERDICT is TRUE, empty otherwise.
-COUNTEREXAMPLE: required if VERDICT is FALSE, empty otherwise.
+## OUTPUT FORMAT (mandatory; deviations are graded as wrong)
+
+Write your reasoning first (concise — under 250 words). Then end your reply with EXACTLY this two-line block, with NO further text after:
+
+VERDICT: TRUE
+\boxed{TRUE}
+
+OR
+
+VERDICT: FALSE
+\boxed{FALSE}
+
+The boxed line MUST be the very last line of your reply. Do not add any text after `\boxed{...}`.
