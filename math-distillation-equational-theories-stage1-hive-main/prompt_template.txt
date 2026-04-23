@@ -1,59 +1,255 @@
-You are deciding whether Equation 1 ({{ equation1 }}) implies Equation 2 ({{ equation2 }}) over all magmas (binary operation `*`).
+Decide whether source law A ({{ equation1 }}) implies target law B ({{ equation2 }}) over all magmas (binary op `*`). Follow this protocol exactly.
 
-Call A = Eq1 (the source) and B = Eq2 (the target).
+IMPORTANT
 
-## CRITICAL DISCIPLINE
+- Rules below are heuristics, not theorems. Apply them, but **concrete evidence overrides them** as defined in EVIDENCE-OVERRIDE.
+- Stop at the first decisive rule UNLESS evidence-override applies.
+- If no listed rule proves TRUE AND evidence-override does not apply, answer FALSE.
 
-You CANNOT use these properties unless A explicitly forces them:
-- associativity (`(a*b)*c = a*(b*c)`) — NOT given in a magma
-- commutativity (`a*b = b*a`) — NOT given
-- existence of identity / inverses — NOT given
-- existence of arbitrary elements ("we can choose y such that y*x = c") — must be PROVED, not assumed
+EVIDENCE-OVERRIDE (these can override rules in either direction):
 
-Reasoning that says "we may assume", "let z be such that", "by associativity", or "given limited time, I'll assert" is INVALID. Such reasoning produces wrong TRUE verdicts.
+A) **Override a rule's TRUE verdict to FALSE** when ALL hold:
+   1. A motif (X1-X3, C1-C14) or T-rule fires giving TRUE
+   2. You test size-2 magmas: left projection (a*b=a), right projection (a*b=b), XOR on {0,1} (a*b = a XOR b)
+   3. In one of those magmas, A holds AND B fails (verify literally with one concrete witness)
+   Then output FALSE with that magma as a verified counterexample. The motif was a false positive.
 
-## PROCEDURE (follow exactly)
+B) **Override a rule's FALSE verdict to TRUE** when ALL hold:
+   1. A rule (F1, F2, F3, G1-G4, D4) fires giving FALSE
+   2. You write an EXPLICIT direct substitution chain: rewrite L_B step by step using only A's equation `L_A = R_A` on subterms, arriving at R_B
+   3. The chain has no hidden steps and uses no unproven assumptions
+   Then output TRUE with the chain as proof.
 
-### Step 1 — Test 4 specific magmas
+If neither override fires, follow the rule's verdict.
 
-For each magma below, evaluate A and B literally, then record one of three outcomes:
-- (a) A holds in this magma AND B fails ⇒ this is a verified COUNTEREXAMPLE, output FALSE.
-- (b) A holds in this magma AND B holds ⇒ consistent with TRUE, no information about FALSE yet.
-- (c) A fails in this magma ⇒ no information from this magma.
+ANTI-CONFABULATION GUARD (read before every TRUE conclusion):
 
-The 4 magmas to test (write out your work for each):
+If you find yourself writing any of the following while reasoning toward TRUE, you are confabulating — STOP and answer FALSE:
+- "we can choose y such that ..." (without proving y exists)
+- "by associativity of *" or "by commutativity" (these are NOT given in a magma)
+- "Given limited time, I'll assert ..."
+- "We may assume ..." (without explicit justification from A)
+- "Such z exists because ..." (without explicit construction)
 
-**M1 — Left projection on {0, 1}**: `a*b = a` for all a,b. Every product collapses to its leftmost variable. So if A = (LHS_A = RHS_A) and we collapse both sides under left projection, do they reduce to the same expression in variables?
+A valid proof of TRUE must use ONLY:
+1. A specific numbered rule (X1, X2, X3, C1-C14, T1-T8, D3) firing on computed features, OR
+2. A direct substitution chain that rewrites L_B into R_B using only the rewrite L_A → R_A (or R_A → L_A) on subterms.
 
-**M2 — Right projection on {0, 1}**: `a*b = b`. Every product collapses to its rightmost variable.
+If neither (1) nor (2) is achievable, the answer is FALSE. Inventing intermediate algebraic claims you cannot justify is the most common failure mode and produces wrong TRUE verdicts.
 
-**M3 — XOR on {0, 1}**: `a*b = a XOR b`. Both sides become polynomial mod 2 in the variables.
+STEP 0: SOURCE-COLLAPSE LEMMAS
 
-**M4 — Constant magma on {0}**: `a*b = 0`, only one element. A and B trivially hold (both sides become 0 = 0). So this magma is always (b) and gives no information; SKIP it but be aware: "trivial 1-element magma satisfies everything."
+First check whether A is a bare law: one side is a single variable and the other side is a product term.
 
-### Step 2 — Decide based on Step 1 results
+Only for bare laws, normalize A as follows:
+- swap the sides if needed so the single variable is on the LEFT
+- rename that bare variable to `x`
+- on the product side, keep full bracketing
+- every occurrence of the bare variable stays `x`
+- rename the OTHER variables by first appearance on the product side to `y`, then `z`, then `w`, ...
 
-- If any of M1–M3 produced outcome (a): output **FALSE** with that magma as your counterexample. Verify by writing out one explicit failing assignment.
-- If all 3 magmas produced outcome (b) or (c) [no falsification]: proceed to Step 3.
+After this normalization, compare A to exactly one of these canonical source laws:
+- `x = x*(y*(z*(x*y)))`  -> LEFT PROJECTION: `p*q = p`
+- `x = x*((y*z)*(z*z))` -> LEFT PROJECTION: `p*q = p`
+- `x = (((y*z)*x)*z)*x` -> RIGHT PROJECTION: `p*q = q`
 
-### Step 3 — Try a substitution proof of TRUE
+Examples:
+- `a = a*((b*c)*(c*c))` normalizes to `x = x*((y*z)*(z*z))`
+- `m = (((n*p)*m)*p)*m` normalizes to `x = (((y*z)*x)*z)*x`
 
-Attempt to derive B from A by direct substitution. Write the rewrite chain:
-- L_B = ... (apply A's equation to subterms) ... = R_B
+If a collapse lemma fires, evaluate B under that projection and stop:
+- under LEFT PROJECTION, every product collapses to its leftmost variable
+- under RIGHT PROJECTION, every product collapses to its rightmost variable
+- if both sides of B collapse to the same variable, answer TRUE; otherwise FALSE
 
-If you can write a complete, rigorous chain (each step is an explicit substitution using `L_A = R_A`), output **TRUE**.
+NON-BARE CONSTANT-PRODUCT LEMMA
 
-If you CANNOT write such a chain after a brief honest attempt: output **FALSE**. (Reason: many implications are FALSE; absence of a rigorous proof + no counterexample yet means the implication is more likely false than true. Do NOT default to TRUE; do NOT confabulate a proof.)
+Also check this non-bare source family:
+- normalize A by renaming variables by first appearance, but keep full bracketing
+- if normalized A has LEFT side exactly `x*y`
+- and the RIGHT side is a product term `U * V`
+- and every occurrence of `x` on the RIGHT side lies in `V` and none lies in `U`
 
-### Output format
+then use CONSTANT-PRODUCT collapse:
+- every non-variable product term collapses to the same symbol `c`
+- a single variable stays itself
+- if both sides of B collapse to the same symbol, answer TRUE; otherwise FALSE
 
-Be concise. Show your magma calculations briefly (one line per magma is fine if A fails or both reduce to identical expressions).
+Example:
+- `x*y = y*((z*w)*x)` fits this family
+- under CONSTANT-PRODUCT collapse, both `((z*x)*y)*x` and `x*x` collapse to `c`
 
-Then end with:
+STEP 0B: BARE-SOURCE CONTRADICTION MOTIFS
 
-VERDICT: TRUE or FALSE (one line)
-\boxed{TRUE}
-or
-\boxed{FALSE}
+Apply this step only if A is bare and STEP 0 did not fire.
 
-The `\boxed{...}` line MUST be the very last line of your reply.
+For STEP 0B, do not do a full rename.
+- only swap sides if needed so the single variable side is on the LEFT
+- then work on the PRODUCT side exactly as written
+- treat the lone variable on the LEFT as the distinguished variable for this step
+
+Compute these source-only features of the product side:
+- `rhsVars(A)` = number of distinct variables on the product side
+- `rhsTotals(A)` = sorted occurrence counts on the product side only, written without separators
+- reminders for `rhsTotals(A)`:
+  - if the counts are `2,2,1`, then `rhsTotals=122`, never `221`
+  - if the counts are `3,1,1`, then `rhsTotals=113`
+  - if the counts are `2,1,1,1`, then `rhsTotals=1112`
+- `Lx(A)` = whether the leftmost variable on the product side is `x`
+- `Rx(A)` = whether the rightmost variable on the product side is `x`
+- `xTop(A)`:
+  - `left` if, at the top product split `U*V`, the variable `x` occurs only in `U`
+  - `right` if `x` occurs only in `V`
+  - `both` if `x` occurs in both `U` and `V`
+- `square(A)` = whether the product side contains a repeated square subterm like `u*u`
+- `topShape(A)`:
+  - `v-m` if the product side is `(variable * product)`
+  - `m-v` if it is `(product * variable)`
+  - `m-m` if both top children are products
+
+Worked examples:
+- `x = y*((z*x)*z)`
+  product side uses variables `{x,y,z}`, so `rhsVars=3`
+  product-side counts are `x:1, y:1, z:2`, so `rhsTotals=112`
+  leftmost is `y`, rightmost is `z`, so `Lx=FALSE`, `Rx=FALSE`
+  at the top split `y * ((z*x)*z)`, the variable `x` occurs only on the RIGHT, so `xTop=right`
+  `topShape=v-m`
+- `x = ((y*(x*x))*z)*w`
+  product side has `rhsVars=4`, and neither leftmost nor rightmost variable is `x`
+- `x = x*(y*((x*z)*y))`
+  product-side counts are `x:2, y:2, z:1`, so `rhsTotals=122`
+  at the top split `x * (y*((x*z)*y))`, the variable `x` occurs in BOTH top children, so `xTop=both`
+
+If any contradiction motif matches, answer TRUE immediately:
+- C1: if `rhsVars(A)=4` and `Lx(A)=FALSE` and `Rx(A)=FALSE`, answer TRUE
+- C2: if the product side has exactly three variables with counts `3,1,1`, and `Lx(A)=FALSE` and `Rx(A)=FALSE`, answer TRUE
+- C3: if `Lx(A)=FALSE` and `xTop(A)=left` and `square(A)=TRUE` and `topShape(A)=m-v`, answer TRUE
+- C4: if the product side has exactly three variables with counts `2,1,1`, and `Lx(A)=FALSE` and `Rx(A)=FALSE` and `xTop(A)=right` and `topShape(A)=v-m`, answer TRUE
+- C5: if the product side has exactly four variables with counts `2,1,1,1`, and `Lx(A)=FALSE` and `Rx(A)=FALSE` and `xTop(A)=right` and `topShape(A)=v-m`, answer TRUE
+- C6: if `rhsVars(A)=3` and `xTop(A)=right` and `topShape(A)=v-m` and the product side contains exactly two occurrences of `x`, answer TRUE
+- C7: if `rhsVars(A)=3` and `Lx(A)=FALSE` and `Rx(A)=FALSE` and `xTop(A)=left` and `topShape(A)=m-v` and the product side contains exactly two occurrences of `x`, answer TRUE
+- C8: if `rhsVars(A)=3` and `Lx(A)=TRUE` and `xTop(A)=left` and `topShape(A)=m-v`, answer TRUE
+- C9: if the product side has exactly three variables with counts `2,2,1`, and `Lx(A)=TRUE` and `Rx(A)=FALSE` and `xTop(A)=both` and `topShape(A)=v-m`, answer TRUE
+- C10: if the product side has exactly three variables with counts `2,2,1`, and `Lx(A)=FALSE` and `Rx(A)=TRUE` and the product side contains exactly two occurrences of `x`, answer TRUE
+- C11: if the product side has exactly three variables with counts `3,1,1`, and `Lx(A)=FALSE` and `Rx(A)=FALSE` and `xTop(A)=right` and `topShape(A)=v-m`, answer TRUE
+- C12: if the product side has exactly three variables with counts `3,1,1`, and `Lx(A)=FALSE` and `Rx(A)=FALSE` and `xTop(A)=left` and `topShape(A)=m-v`, answer TRUE
+- C13: if the product side has exactly four variables with counts `2,1,1,1`, and `Lx(A)=FALSE` and `Rx(A)=TRUE`, answer TRUE
+- C14: if B is bare, and the product side has exactly three variables with counts `3,1,1`, and `Rx(A)=TRUE` and `square(A)=FALSE`, answer TRUE
+
+STEP 1: COMPUTE FEATURES EXACTLY
+
+For each equation `E: L = R`, count variable letters on each side separately.
+
+WORKED EXAMPLE: `x = y * (y * ((x * y) * x))`
+- left side variables: `[x]` so left count = 1
+- right side variables: `[y, y, x, y, x]` so right count = 5
+- `size(E) = 1 + 5 = 6`
+- `vars(E) = 2` because only `{x, y}`
+- `imb(E) = |1-2| + |0-3| = 4`
+- `bare(E) = TRUE` because one side is a single variable
+- `LP(E) = FALSE` because leftmost vars are `x` and `y`
+- `RP(E) = TRUE` because rightmost vars are both `x`
+- `SET(E) = FALSE` because left uses `{x}` and right uses `{x,y}`
+- `XOR(E) = FALSE` because parity does not match
+- `AB(E) = FALSE` because exact counts do not match
+
+Compute for both A and B:
+- `size(E)` = total variable occurrences on both sides
+- `vars(E)` = number of distinct variables
+- `imb(E)` = sum of absolute left/right count differences
+- `bare(E)` = one side is a single variable
+- `LP(E)` = leftmost variable matches across the two sides
+- `RP(E)` = rightmost variable matches across the two sides
+- `SET(E)` = both sides use the same variable set
+- `XOR(E)` = every variable has the same parity on both sides
+- `AB(E)` = every variable has exactly the same count on both sides
+
+Reminder for `vars(E)`:
+- count distinct variable LETTERS only
+- multiplicity does not matter
+- example: `x*y = (x*(x*z))*x` has `vars = 3` because the set is `{x,y,z}`
+
+STEP 2: SEPARATOR TESTS
+
+If `LP(A)` and not `LP(B)`: FALSE.
+If `RP(A)` and not `RP(B)`: FALSE.
+If `SET(A)` and not `SET(B)`: FALSE.
+If `XOR(A)` and not `XOR(B)`: FALSE.
+If `AB(A)` and not `AB(B)`: FALSE.
+
+One separator means FALSE immediately.
+
+STEP 3: FALSE GUARD
+
+G1: If all of these hold, answer FALSE:
+- `bare(A)` is true
+- `bare(B)` is false
+- `size(A) = size(B)`
+- `vars(B) < vars(A)`
+- `imb(B) > imb(A)`
+- `XOR(A)` is true
+
+G2: If all of these hold, answer FALSE:
+- `bare(A)` is true
+- `vars(A) = 2`
+- `bare(B)` is false
+- `vars(B) > vars(A)`
+- `size(B) >= size(A)`
+
+G3: If all of these hold, answer FALSE:
+- `bare(A)` is false
+- `vars(A) >= 5`
+- `bare(B)` is false
+- `vars(B) < vars(A)`
+- `size(B) = size(A)`
+
+G4: If all of these hold, answer FALSE:
+- `bare(A)` is false
+- `bare(B)` is false
+- `size(B) = size(A)`
+- `vars(B) <= vars(A) - 2`
+
+STEP 4: STRUCTURAL RULES
+
+Let `sA=size(A)`, `sB=size(B)`, `vA=vars(A)`, `vB=vars(B)`, `iA=imb(A)`, `iB=imb(B)`.
+
+Apply in order, stopping at the first match:
+- T4: if `bare(A)` is true and `vA >= 4` and `vB = 2`, answer TRUE.
+- T6: if `bare(A)` is true and `RP(A)` is false and `XOR(A)` is true and `vB = 2` and `RP(B)` is true, answer TRUE.
+- T7: if `bare(A)` is false and `vA = 3` and `iA = 2` and `vB = 3` and `XOR(B)` is false, answer TRUE.
+- T8: if `vA = 3` and `XOR(A)` is false and `bare(B)` is true and `RP(B)` is false, answer TRUE.
+- F1: if `vB = vA`, answer FALSE.
+- F2: if `iB < iA`, answer FALSE.
+- F3: if `sB < sA`, answer FALSE.
+- T1: if `bare(A)` is true and `vA >= 3` and `sB > sA`, answer TRUE.
+- T2: if `bare(A)` is true and `bare(B)` is true and `vA >= 3` and `vB > vA` and `iB > iA`, answer TRUE.
+- T5: if `vB < vA` and `iB > iA`, answer TRUE.
+
+STEP 5: EXTENDED RULES
+
+Apply only if nothing above fired.
+
+- D3: if every variable in A appears the same TOTAL number of times across both sides, and `vB < vA`, and B is a bare law of the form `x = x * (...)`, answer TRUE.
+- D4: otherwise FALSE.
+
+Example for D3:
+- `x = ((y*x)*y)*(z*z)` has total counts `x:2, y:2, z:2`, so the totals are uniform
+
+REASONING STYLE
+
+State:
+- the computed features,
+- whether a source-collapse lemma or contradiction motif fired,
+- whether any separator or guard fired,
+- and which final rule decided the verdict.
+
+Be concise. If no listed rule proves TRUE, answer FALSE.
+
+OUTPUT FORMAT (use exact headers, no extra formatting):
+VERDICT: TRUE or FALSE
+REASONING: non-empty explanation
+PROOF: required if VERDICT is TRUE, empty otherwise
+COUNTEREXAMPLE: required if VERDICT is FALSE, empty otherwise
+
+FINAL LINE (mandatory)
+After the VERDICT/REASONING/PROOF/COUNTEREXAMPLE block, emit one final line containing exactly `\boxed{TRUE}` or `\boxed{FALSE}` matching your VERDICT. No text after it.
