@@ -7,6 +7,21 @@ IMPORTANT
 - Only use extra algebra for the source-collapse lemmas in STEP 0.
 - If no listed rule proves TRUE, answer FALSE.
 
+ANTI-CONFABULATION GUARD (read before every TRUE conclusion):
+
+If you find yourself writing any of the following while reasoning toward TRUE, you are confabulating — STOP and answer FALSE:
+- "we can choose y such that ..." (without proving y exists)
+- "by associativity of *" or "by commutativity" (these are NOT given in a magma)
+- "Given limited time, I'll assert ..."
+- "We may assume ..." (without explicit justification from A)
+- "Such z exists because ..." (without explicit construction)
+
+A valid proof of TRUE must use ONLY:
+1. A specific numbered rule (X1, X2, X3, C1-C14, T1-T8, D3) firing on computed features, OR
+2. A direct substitution chain that rewrites L_B into R_B using only the rewrite L_A → R_A (or R_A → L_A) on subterms.
+
+If neither (1) nor (2) is achievable, the answer is FALSE. Inventing intermediate algebraic claims you cannot justify is the most common failure mode and produces wrong TRUE verdicts.
+
 STEP 0: SOURCE-COLLAPSE LEMMAS
 
 First check whether A is a bare law: one side is a single variable and the other side is a product term.
@@ -58,28 +73,7 @@ For STEP 0B, do not do a full rename.
 - then work on the PRODUCT side exactly as written
 - treat the lone variable on the LEFT as the distinguished variable for this step
 
-MANDATORY PARSING DRILL — before computing features, WRITE OUT the parse tree.
-
-1. Find the TOP SPLIT of the product side (the outermost `*`). Call its left child `U` and right child `V`.
-2. List all leaves of U in left-to-right order.
-3. List all leaves of V in left-to-right order.
-4. Concatenate → full leaf list of the product side.
-5. LEFTMOST leaf = first in the full list. RIGHTMOST leaf = last in the full list.
-
-WORKED PARSING EXAMPLE (do this for your actual problem, do not skip):
-Product side = `(y * (z * x)) * (w * x)`
-- Top split: U = `(y * (z * x))`, V = `(w * x)`.
-- Leaves of U, L→R: y, z, x.  (Drill into `(z * x)` → z, x; prepend y.)
-- Leaves of V, L→R: w, x.
-- Full leaf list: y, z, x, w, x.
-- LEFTMOST leaf = y → Lx = FALSE.
-- RIGHTMOST leaf = x → Rx = **TRUE**.
-- x occurs in U (once) AND in V (once) → xTop = `both`.
-- U is a product, V is a product → topShape = `m-m`.
-
-CRITICAL REMINDER: `Rx` is whether the RIGHTMOST LEAF of the whole product side is `x`. Do NOT confuse this with "the top split's right child is the variable x" — those are different. In the example above, V = `(w*x)` is a product (not a variable), yet Rx = TRUE because the last leaf is x.
-
-Now compute the features of the product side:
+Compute these source-only features of the product side:
 - `rhsVars(A)` = number of distinct variables on the product side
 - `rhsTotals(A)` = sorted occurrence counts on the product side only, written without separators
 - reminders for `rhsTotals(A)`:
@@ -243,4 +237,4 @@ PROOF: required if VERDICT is TRUE, empty otherwise
 COUNTEREXAMPLE: required if VERDICT is FALSE, empty otherwise
 
 FINAL LINE (mandatory)
-After the VERDICT/REASONING/PROOF/COUNTEREXAMPLE block, emit one final line containing exactly `oxed{TRUE}` or `oxed{FALSE}` matching your VERDICT. No text after it.
+After the VERDICT/REASONING/PROOF/COUNTEREXAMPLE block, emit one final line containing exactly `\boxed{TRUE}` or `\boxed{FALSE}` matching your VERDICT. No text after it.
