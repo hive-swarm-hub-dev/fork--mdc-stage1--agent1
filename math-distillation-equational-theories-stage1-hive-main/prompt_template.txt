@@ -1,31 +1,46 @@
 Decide whether source law A ({{ equation1 }}) implies target law B ({{ equation2 }}) over all magmas (binary op `*`). Apply the protocol exactly. Stop at the first decisive rule.
 
-ANTI-CONFABULATION GUARD: STOP and answer FALSE if you find yourself writing any of: "we can choose y such that...", "by associativity/commutativity" (NOT given in magmas), "Given limited time, I'll assert...", "We may assume...", "Such z exists because...". A valid TRUE proof MUST come from either (1) a numbered rule firing on computed features, or (2) a direct substitution chain rewriting L_B into R_B using only A's equation. Otherwise FALSE.
+IMPORTANT
+- Rules below are heuristics. Apply them and stop at the first decisive match.
+- Never invent algebraic claims; magmas have NO associativity, NO commutativity, NO identities, NO inverses.
+- If no listed rule proves TRUE and no substitution chain proves TRUE, answer FALSE.
+
+ANTI-CONFABULATION GUARD: STOP and answer FALSE if you find yourself writing any of:
+- "we can choose y such that ..." (without proving y exists)
+- "by associativity of *" or "by commutativity"
+- "Given limited time, I'll assert ..."
+- "We may assume ..."
+- "Such z exists because ..."
+
+A valid TRUE proof MUST come from either (1) a numbered rule (X1-X3, C1-C14, T1-T8, D3) firing on computed features, or (2) a direct substitution chain rewriting L_B into R_B using only A's equation `L_A = R_A` on subterms. Otherwise FALSE.
 
 STEP 0: SOURCE-COLLAPSE LEMMAS
 
-A is bare if one side is a single variable. For bare A, normalize: swap so the lone variable is on the LEFT, rename it `x`; rename other variables on the product side by first-appearance to `y, z, w, ...`; keep full bracketing. Compare normalized A to:
-- `x = x*(y*(z*(x*y)))`  → LEFT PROJECTION: `p*q = p`
+A is bare if one side is a single variable. For bare A: swap so the lone variable is on the LEFT, rename it `x`; rename other product-side variables by first-appearance to `y, z, w, ...`; keep full bracketing. Compare normalized A to:
+- `x = x*(y*(z*(x*y)))` → LEFT PROJECTION: `p*q = p`
 - `x = x*((y*z)*(z*z))` → LEFT PROJECTION: `p*q = p`
 - `x = (((y*z)*x)*z)*x` → RIGHT PROJECTION: `p*q = q`
 
 Examples: `a = a*((b*c)*(c*c))` → `x = x*((y*z)*(z*z))`; `m = (((n*p)*m)*p)*m` → `x = (((y*z)*x)*z)*x`.
 
-If a collapse lemma fires, evaluate B under that projection (left → leftmost variable, right → rightmost variable). If both sides of B reduce to the same variable, TRUE; else FALSE.
+If a collapse lemma fires, evaluate B under that projection (LEFT → leftmost variable, RIGHT → rightmost variable). Both sides of B reduce to the same variable → TRUE; else FALSE.
 
-NON-BARE CONSTANT-PRODUCT LEMMA: if normalized A has LHS exactly `x*y` and RHS is a product `U*V` where every `x` on the RHS lies only in `V`, apply CONSTANT-PRODUCT collapse (every non-variable product term collapses to one symbol `c`; lone variables stay). Both sides of B same symbol → TRUE; else FALSE. Example: `x*y = y*((z*w)*x)` fits; under it, `((z*x)*y)*x` and `x*x` both collapse to `c`.
+NON-BARE CONSTANT-PRODUCT LEMMA: if normalized A has LHS exactly `x*y` and RHS is a product `U*V` where every `x` on the RHS lies only in `V`, apply CONSTANT-PRODUCT collapse (every non-variable product collapses to one symbol `c`; lone variables stay). Both sides of B same symbol → TRUE; else FALSE. Example: `x*y = y*((z*w)*x)` fits; under it, both `((z*x)*y)*x` and `x*x` collapse to `c`.
 
 STEP 0B: BARE-SOURCE CONTRADICTION MOTIFS (apply only if A is bare and STEP 0 did not fire)
 
-Do NOT rename for STEP 0B. Just swap so the lone variable is on the LEFT; treat that variable as `x`; work the PRODUCT side as written. Compute these features of the product side:
-- `rhsVars` = number of distinct variables
+Do NOT rename for STEP 0B. Just swap so the lone variable is LEFT; treat that variable as `x`; work the PRODUCT side as written. Features:
+- `rhsVars` = number of distinct variables on the product side
 - `rhsTotals` = sorted occurrence counts written without separators (counts 2,2,1 → `122`; 3,1,1 → `113`; 2,1,1,1 → `1112`)
-- `Lx` / `Rx` = leftmost/rightmost variable is `x`
-- `xTop` = `left`/`right`/`both` based on which top-split child(ren) `x` appears in (top split = U*V at the outermost `*`)
-- `square` = product side contains a repeated `u*u` subterm
+- `Lx` / `Rx` = leftmost / rightmost variable is `x`
+- `xTop` = `left` / `right` / `both` based on which top-split child(ren) `x` appears in (top split = U*V at the outermost `*`)
+- `square` = product side has a repeated `u*u` subterm
 - `topShape` = `v-m` (variable*product), `m-v` (product*variable), or `m-m` (both products)
 
-Worked example: for `x = y*((z*x)*z)`, product side is `y * ((z*x)*z)` so `rhsVars=3` (x,y,z), counts `x:1,y:1,z:2` → `rhsTotals=112`, `Lx=FALSE`, `Rx=FALSE`, `xTop=right` (x only in right child), `topShape=v-m`, `square=FALSE`.
+Worked examples:
+- `x = y*((z*x)*z)`: `rhsVars=3`, counts `x:1,y:1,z:2` → `rhsTotals=112`, `Lx=FALSE`, `Rx=FALSE`, `xTop=right` (x only in right child `(z*x)*z`), `topShape=v-m`, `square=FALSE`
+- `x = ((y*(x*x))*z)*w`: `rhsVars=4`, leftmost is `y`, rightmost is `w` so `Lx=FALSE`, `Rx=FALSE`
+- `x = x*(y*((x*z)*y))`: counts `x:2,y:2,z:1` → `rhsTotals=122`, `xTop=both` (x in both top children), `topShape=v-m`
 
 If any motif matches, answer TRUE immediately:
 - C1: `rhsVars=4`, ¬Lx, ¬Rx
@@ -46,9 +61,9 @@ If any motif matches, answer TRUE immediately:
 STEP 1: COMPUTE FEATURES (for both A and B)
 
 For each equation E with sides L=R, count variable letters per side. Then:
-- `size(E)` = total var occurrences
-- `vars(E)` = number of distinct variables (letters only; multiplicity does not matter, e.g. `x*y = (x*(x*z))*x` has vars=3)
-- `imb(E)` = sum over variables of |count_left − count_right|
+- `size(E)` = total variable occurrences
+- `vars(E)` = number of distinct variables (letters only; multiplicity ignored, e.g. `x*y = (x*(x*z))*x` has vars=3)
+- `imb(E)` = sum over each variable of |count_left − count_right|
 - `bare(E)` = one side is a single variable
 - `LP(E)` = leftmost vars match across the two sides
 - `RP(E)` = rightmost vars match
@@ -56,7 +71,7 @@ For each equation E with sides L=R, count variable letters per side. Then:
 - `XOR(E)` = every variable has matching parity on both sides
 - `AB(E)` = every variable has exactly the same count on both sides
 
-Worked example, `x = y*(y*((x*y)*x))`: left vars `[x]` (count 1), right vars `[y,y,x,y,x]` (count 5). `size=6`, `vars=2`, `imb=|1-2|+|0-3|=4`, `bare=TRUE`, `LP=FALSE`, `RP=TRUE`, `SET=FALSE`, `XOR=FALSE`, `AB=FALSE`.
+Worked example, `x = y*(y*((x*y)*x))`: left vars `[x]` (count 1), right vars `[y,y,x,y,x]` (count 5). `size=6`, `vars=2`, `imb=|1-2|+|0-3|=4`, `bare=TRUE`, `LP=FALSE`, `RP=TRUE` (both rightmost are `x`), `SET=FALSE`, `XOR=FALSE`, `AB=FALSE`.
 
 STEP 2: SEPARATOR TESTS — one hit ⇒ FALSE
 
@@ -83,13 +98,12 @@ STEP 4: STRUCTURAL RULES (let sA=size(A), sB=size(B), vA=vars(A), vB=vars(B), iA
 - T5: vB<vA, iB>iA → TRUE
 
 STEP 5: EXTENDED RULES (only if nothing above fired)
-
 - D3: every variable in A has identical TOTAL count across both sides AND vB<vA AND B is bare of form `x = x*(…)` → TRUE
 - D4: otherwise FALSE
 
 Example for D3: `x = ((y*x)*y)*(z*z)` has totals `x:2, y:2, z:2` (uniform).
 
-REASONING STYLE: state computed features, which lemma/motif/separator/guard/rule fired, and the final verdict. Be concise. If no rule proves TRUE, answer FALSE.
+REASONING STYLE: state the computed features, which lemma/motif/separator/guard/rule fired, and the verdict. Be concise. If no rule proves TRUE and no substitution chain works, answer FALSE.
 
 OUTPUT FORMAT (exact headers, no extra formatting):
 VERDICT: TRUE or FALSE
