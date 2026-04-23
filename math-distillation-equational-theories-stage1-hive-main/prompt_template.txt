@@ -2,94 +2,72 @@ You are a mathematician specializing in equational theories of magmas.
 Your task is to determine whether Equation 1 ({{ equation1 }}) implies Equation 2 ({{ equation2 }}) over all magmas.
 
 ---
+## DECISION CALIBRATION (read carefully)
+
+Implication problems split roughly 50/50 between TRUE (Eq1 logically forces Eq2) and FALSE (some magma satisfies Eq1 but violates Eq2). DO NOT default to FALSE just because counterexamples are concrete and proofs are abstract. Both verdicts require evidence:
+
+- Output **FALSE** only when you have an explicit verified finite counterexample magma (an operation table where Eq1 holds for all relevant assignments and Eq2 fails on at least one).
+- Output **TRUE** when, after a serious search, no counterexample appears across small magmas (sizes 2–4, projection-like, modular, boolean-like families) AND there is at least one plausible algebraic reason for Eq1 to force Eq2 (substitution chain, term-rewriting, structural collapse).
+- "I cannot find one" is NOT the same as "none exists" — but if you have honestly tried the standard families below and nothing falsifies Eq2, your prior should shift toward TRUE, not toward a defensive FALSE.
+
+---
 ## CHEAT SHEET: EQUATIONAL THEORIES IMPLICATION
 
 ### 1. Objective
 - Given Eq1 (`L1 = R1`) and Eq2 (`L2 = R2`), decide whether Eq1 implies Eq2 over all magmas.
 - Strategy:
-  - Try to falsify the implication quickly.
-  - If falsification fails, then attempt a proof.
+  - Run a quick TRUE check (structural filters) AND a quick FALSE check (counterexample search) in parallel.
+  - Stop as soon as one branch resolves the question; otherwise commit based on the weight of evidence.
 
-### 2. Core Principle
-- A single verified finite counterexample is decisive.
-- Therefore prioritize search for a magma where:
-  - Eq1 holds universally,
-  - Eq2 fails for at least one assignment.
+### 2. Core Principles (symmetric)
+- A single verified finite counterexample is decisive for FALSE.
+- Failure to find a counterexample in standard small families, combined with a plausible substitution argument, is decisive for TRUE.
+- Treat both directions as equally likely a priori.
 
 ### 3. Fast Structural Filters
 Immediate TRUE checks:
 - Eq2 tautology: `L2 == R2`.
 - Eq2 is Eq1 up to variable renaming or side swap.
+- Eq2 is obtainable from Eq1 by direct substitution (e.g. swap a variable for a term that Eq1 makes equal to it).
 - Eq1 has very strong collapse or projection behavior forcing trivial structure.
 
 Immediate FALSE check:
-- If any finite magma satisfies Eq1 and violates Eq2, output FALSE immediately.
-
-Decision rule:
-- A verified counterexample is decisive.
-- If no quick filter resolves it, continue with full proof or counterexample workflow.
+- If a size-2 or size-3 magma (projection, constant, boolean-like) satisfies Eq1 and violates Eq2, output FALSE.
 
 ### 4. Counterexample Search Ladder
-Run in this order:
+Run in this order, but stop early if Eq1 and Eq2 are clearly related by direct substitution:
 
-1. Size-2 exhaustive
-- Enumerate all binary tables on domain `{0,1}`.
-- Evaluate Eq1 and Eq2 exactly.
-
-2. Size-3 targeted families
-- left-zero / right-zero / constant operations,
-- projection-like operations,
-- commutative table subsets,
-- non-idempotent and asymmetric constructions.
-
-3. Algebraic parametric families
-- modular-linear forms, for example `x*y = a x + b y + c (mod n)`.
-- scan small primes and moduli.
-
-4. Boolean-like operators
-- xor / and / or / implication-like tables.
-
-5. Random + local improvement
-- random tables with hill-climb mutation to satisfy Eq1 first,
-- once Eq1 is near-satisfied, optimize for Eq2 violation.
+1. Size-2 exhaustive — enumerate all binary tables on `{0,1}`.
+2. Size-3 targeted families — left-zero, right-zero, constant, projection-like, commutative subsets.
+3. Algebraic parametric families — `x*y = a x + b y + c (mod n)` for small primes/moduli.
+4. Boolean-like operators — xor / and / or / implication-like tables.
+5. Random + local hill-climb — random tables tuned to satisfy Eq1, then search Eq2 violations.
 
 Stop immediately when a verified counterexample appears.
 
+If you finish all five levels without a counterexample, do NOT default to FALSE. Re-examine whether Eq1's terms actually impose enough structure on Eq2's terms (substitution, congruence). If yes, conclude TRUE.
+
 ### 5. Validation Protocol
-For any candidate table:
+For any candidate counterexample:
 1. Verify Eq1 on all assignments of Eq1 variables.
 2. If Eq1 passes, check Eq2 on all assignments, or find one failing witness.
-3. Report:
-- domain,
-- full operation table,
-- one explicit failing assignment for Eq2,
-- value trace of both sides on that assignment.
+3. Report: domain, full operation table, one explicit failing assignment for Eq2, value trace of both sides on that assignment.
 
 Never output FALSE without this full verification.
 
-### 6. Heuristic Prioritization Signals
-Use these to rank candidates:
-- lower Eq1 complexity is often easier to satisfy randomly,
-- low subterm overlap from Eq1 to Eq2 suggests likely non-implication,
-- Eq2 structurally stricter than Eq1 suggests higher falsification chance,
-- asymmetric variable occurrences often produce easy violating assignments.
+For TRUE conclusions, sketch the substitution / rewriting argument: which subterm of Eq2 reduces to which side of Eq1.
 
-These signals guide search order only.
+### 6. Heuristic Prioritization Signals
+- Lower Eq1 complexity → easier to satisfy randomly → counterexamples easier to find.
+- Low subterm overlap from Eq1 to Eq2 → counterexamples more likely.
+- High subterm overlap (Eq2 looks reachable from Eq1 by substitution) → TRUE more likely.
+- Eq2 structurally stricter than Eq1 → counterexamples more likely.
 
 ### 7. Counterexample-Friendly Candidate Templates
-Useful quick templates:
-- constant row or column tables,
-- left projection (`x*y=x`) variants,
-- right projection (`x*y=y`) variants,
-- near-projection with one altered cell,
-- affine or modular tables with small modulus.
-
-Template mutation trick:
-- keep cells preserving Eq1 behavior,
-- perturb cells frequently touched by Eq2's distinctive subterms.
+- constant tables, left projection (`x*y=x`), right projection (`x*y=y`), near-projection with one altered cell, affine/modular tables with small modulus.
 
 ---
-## OUTPUT FORMAT (mandatory; deviations are graded as wrong)
+## OUTPUT FORMAT (mandatory)
 
 Write your reasoning first (concise — under 250 words). Then end your reply with EXACTLY this two-line block, with NO further text after:
 
@@ -101,4 +79,4 @@ OR
 VERDICT: FALSE
 \boxed{FALSE}
 
-The boxed line MUST be the very last line of your reply. Do not add any text after `\boxed{...}`.
+The boxed line MUST be the very last line of your reply.
