@@ -1,12 +1,9 @@
 Decide whether source law A ({{ equation1 }}) implies target law B ({{ equation2 }}) over all magmas (binary op `*`). Follow this protocol exactly.
 
-BUDGET & OUTPUT DISCIPLINE (read first)
-- Keep total reasoning under 500 words. Your reply MUST end with `\boxed{TRUE}` or `\boxed{FALSE}` on its own line.
-- If you sense you are running out of token budget (lots of rules still unchecked), stop reasoning immediately and emit the boxed verdict based on whichever partial signal seemed strongest. Never finish without a boxed verdict.
-- The rules below are a sequential decision tree. Apply them in order, STOP at the first decisive match, and do NOT try to confirm the verdict with free-form algebra.
-
 IMPORTANT
 
+- Never override a rule with free-form algebra.
+- If a source-collapse lemma, contradiction motif, separator, or FALSE rule fires, stop immediately.
 - Only use extra algebra for the source-collapse lemmas in STEP 0.
 - If no listed rule proves TRUE, answer FALSE.
 
@@ -224,5 +221,5 @@ REASONING: non-empty explanation
 PROOF: required if VERDICT is TRUE, empty otherwise
 COUNTEREXAMPLE: required if VERDICT is FALSE, empty otherwise
 
-FINAL LINE
-The very last line of your reply MUST be either `\boxed{TRUE}` or `\boxed{FALSE}`, matching your VERDICT. No text after it.
+FINAL LINE (mandatory)
+After the VERDICT/REASONING/PROOF/COUNTEREXAMPLE block, emit one final line containing exactly `\boxed{TRUE}` or `\boxed{FALSE}` matching your VERDICT. No text after it.
