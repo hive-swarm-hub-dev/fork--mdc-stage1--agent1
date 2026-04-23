@@ -58,7 +58,28 @@ For STEP 0B, do not do a full rename.
 - then work on the PRODUCT side exactly as written
 - treat the lone variable on the LEFT as the distinguished variable for this step
 
-Compute these source-only features of the product side:
+MANDATORY PARSING DRILL — before computing features, WRITE OUT the parse tree.
+
+1. Find the TOP SPLIT of the product side (the outermost `*`). Call its left child `U` and right child `V`.
+2. List all leaves of U in left-to-right order.
+3. List all leaves of V in left-to-right order.
+4. Concatenate → full leaf list of the product side.
+5. LEFTMOST leaf = first in the full list. RIGHTMOST leaf = last in the full list.
+
+WORKED PARSING EXAMPLE (do this for your actual problem, do not skip):
+Product side = `(y * (z * x)) * (w * x)`
+- Top split: U = `(y * (z * x))`, V = `(w * x)`.
+- Leaves of U, L→R: y, z, x.  (Drill into `(z * x)` → z, x; prepend y.)
+- Leaves of V, L→R: w, x.
+- Full leaf list: y, z, x, w, x.
+- LEFTMOST leaf = y → Lx = FALSE.
+- RIGHTMOST leaf = x → Rx = **TRUE**.
+- x occurs in U (once) AND in V (once) → xTop = `both`.
+- U is a product, V is a product → topShape = `m-m`.
+
+CRITICAL REMINDER: `Rx` is whether the RIGHTMOST LEAF of the whole product side is `x`. Do NOT confuse this with "the top split's right child is the variable x" — those are different. In the example above, V = `(w*x)` is a product (not a variable), yet Rx = TRUE because the last leaf is x.
+
+Now compute the features of the product side:
 - `rhsVars(A)` = number of distinct variables on the product side
 - `rhsTotals(A)` = sorted occurrence counts on the product side only, written without separators
 - reminders for `rhsTotals(A)`:
@@ -222,4 +243,4 @@ PROOF: required if VERDICT is TRUE, empty otherwise
 COUNTEREXAMPLE: required if VERDICT is FALSE, empty otherwise
 
 FINAL LINE (mandatory)
-After the VERDICT/REASONING/PROOF/COUNTEREXAMPLE block, emit one final line containing exactly `\boxed{TRUE}` or `\boxed{FALSE}` matching your VERDICT. No text after it.
+After the VERDICT/REASONING/PROOF/COUNTEREXAMPLE block, emit one final line containing exactly `oxed{TRUE}` or `oxed{FALSE}` matching your VERDICT. No text after it.
