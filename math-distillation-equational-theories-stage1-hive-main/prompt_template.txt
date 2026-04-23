@@ -2,25 +2,10 @@ Decide whether source law A ({{ equation1 }}) implies target law B ({{ equation2
 
 IMPORTANT
 
-- Rules below are heuristics, not theorems. Apply them, but **concrete evidence overrides them** as defined in EVIDENCE-OVERRIDE.
-- Stop at the first decisive rule UNLESS evidence-override applies.
-- If no listed rule proves TRUE AND evidence-override does not apply, answer FALSE.
-
-EVIDENCE-OVERRIDE (these can override rules in either direction):
-
-A) **Override a rule's TRUE verdict to FALSE** when ALL hold:
-   1. A motif (X1-X3, C1-C14) or T-rule fires giving TRUE
-   2. You test size-2 magmas: left projection (a*b=a), right projection (a*b=b), XOR on {0,1} (a*b = a XOR b)
-   3. In one of those magmas, A holds AND B fails (verify literally with one concrete witness)
-   Then output FALSE with that magma as a verified counterexample. The motif was a false positive.
-
-B) **Override a rule's FALSE verdict to TRUE** when ALL hold:
-   1. A rule (F1, F2, F3, G1-G4, D4) fires giving FALSE
-   2. You write an EXPLICIT direct substitution chain: rewrite L_B step by step using only A's equation `L_A = R_A` on subterms, arriving at R_B
-   3. The chain has no hidden steps and uses no unproven assumptions
-   Then output TRUE with the chain as proof.
-
-If neither override fires, follow the rule's verdict.
+- Never override a rule with free-form algebra.
+- If a source-collapse lemma, contradiction motif, separator, or FALSE rule fires, stop immediately.
+- Only use extra algebra for the source-collapse lemmas in STEP 0.
+- If no listed rule proves TRUE, answer FALSE.
 
 ANTI-CONFABULATION GUARD (read before every TRUE conclusion):
 
@@ -128,13 +113,10 @@ If any contradiction motif matches, answer TRUE immediately:
 - C5: if the product side has exactly four variables with counts `2,1,1,1`, and `Lx(A)=FALSE` and `Rx(A)=FALSE` and `xTop(A)=right` and `topShape(A)=v-m`, answer TRUE
 - C6: if `rhsVars(A)=3` and `xTop(A)=right` and `topShape(A)=v-m` and the product side contains exactly two occurrences of `x`, answer TRUE
 - C7: if `rhsVars(A)=3` and `Lx(A)=FALSE` and `Rx(A)=FALSE` and `xTop(A)=left` and `topShape(A)=m-v` and the product side contains exactly two occurrences of `x`, answer TRUE
-- C8: if `rhsVars(A)=3` and `Lx(A)=TRUE` and `xTop(A)=left` and `topShape(A)=m-v`, answer TRUE
 - C9: if the product side has exactly three variables with counts `2,2,1`, and `Lx(A)=TRUE` and `Rx(A)=FALSE` and `xTop(A)=both` and `topShape(A)=v-m`, answer TRUE
 - C10: if the product side has exactly three variables with counts `2,2,1`, and `Lx(A)=FALSE` and `Rx(A)=TRUE` and the product side contains exactly two occurrences of `x`, answer TRUE
 - C11: if the product side has exactly three variables with counts `3,1,1`, and `Lx(A)=FALSE` and `Rx(A)=FALSE` and `xTop(A)=right` and `topShape(A)=v-m`, answer TRUE
 - C12: if the product side has exactly three variables with counts `3,1,1`, and `Lx(A)=FALSE` and `Rx(A)=FALSE` and `xTop(A)=left` and `topShape(A)=m-v`, answer TRUE
-- C13: if the product side has exactly four variables with counts `2,1,1,1`, and `Lx(A)=FALSE` and `Rx(A)=TRUE`, answer TRUE
-- C14: if B is bare, and the product side has exactly three variables with counts `3,1,1`, and `Rx(A)=TRUE` and `square(A)=FALSE`, answer TRUE
 
 STEP 1: COMPUTE FEATURES EXACTLY
 
