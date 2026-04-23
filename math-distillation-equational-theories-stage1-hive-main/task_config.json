@@ -1,0 +1,20 @@
+{
+  "model_aliases": [
+    "gpt-oss-120b",
+    "llama-3-3-70b-instruct",
+    "gemma-4-31b-it"
+  ],
+  "problem_sets": {
+    "normal": {"path": "data/normal.jsonl", "limit": 60, "weight": 0.35},
+    "hard1": {"path": "data/hard1.jsonl", "limit": 69, "weight": 0.15},
+    "hard2": {"path": "data/hard2.jsonl", "limit": 120, "weight": 0.25},
+    "hard3_holdout": {"path": "data/hard2.jsonl", "limit": 80, "offset": 120, "weight": 0.25}
+  },
+  "penalties": {
+    "parse_failure_weight": 0.35,
+    "cost_weight": 0.10,
+    "latency_weight": 0.05,
+    "max_recommended_cost_per_problem_usd": 0.01,
+    "max_recommended_elapsed_seconds": 600.0
+  }
+}

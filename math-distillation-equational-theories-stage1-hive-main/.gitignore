@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.venv/
+run.log
+results.tsv
+*.tsv
+*.jsonl.tmp
+.env
+.DS_Store
