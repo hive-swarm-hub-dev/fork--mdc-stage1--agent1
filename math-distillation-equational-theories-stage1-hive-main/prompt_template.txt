@@ -1,229 +1,96 @@
-Decide whether source law A ({{ equation1 }}) implies target law B ({{ equation2 }}) over all magmas (binary op `*`). Follow this protocol exactly.
+You are a mathematician specializing in equational theories of magmas.
+Your task is to determine whether Equation 1 ({{ equation1 }}) implies Equation 2 ({{ equation2 }}) over all magmas.
 
-IMPORTANT
+---
+## CHEAT SHEET: EQUATIONAL THEORIES IMPLICATION
 
-- Never override a rule with free-form algebra.
-- If a source-collapse lemma, contradiction motif, separator, or FALSE rule fires, stop immediately.
-- Only use extra algebra for the source-collapse lemmas in STEP 0.
-- If no listed rule proves TRUE, answer FALSE.
+### 1. Objective
+- Given Eq1 (`L1 = R1`) and Eq2 (`L2 = R2`), decide whether Eq1 implies Eq2 over all magmas.
+- Strategy:
+  - Try to falsify the implication quickly.
+  - If falsification fails, then attempt a proof.
 
-ANTI-CONFABULATION GUARD (read before every TRUE conclusion):
+### 2. Core Principle
+- A single verified finite counterexample is decisive.
+- Therefore prioritize search for a magma where:
+  - Eq1 holds universally,
+  - Eq2 fails for at least one assignment.
 
-If you find yourself writing any of the following while reasoning toward TRUE, you are confabulating — STOP and answer FALSE:
-- "we can choose y such that ..." (without proving y exists)
-- "by associativity of *" or "by commutativity" (these are NOT given in a magma)
-- "Given limited time, I'll assert ..."
-- "We may assume ..." (without explicit justification from A)
-- "Such z exists because ..." (without explicit construction)
+### 3. Fast Structural Filters
+Immediate TRUE checks:
+- Eq2 tautology: `L2 == R2`.
+- Eq2 is Eq1 up to variable renaming or side swap.
+- Eq1 has very strong collapse or projection behavior forcing trivial structure.
 
-A valid proof of TRUE must use ONLY:
-1. A specific numbered rule (X1, X2, X3, C1-C14, T1-T8, D3) firing on computed features, OR
-2. A direct substitution chain that rewrites L_B into R_B using only the rewrite L_A → R_A (or R_A → L_A) on subterms.
+Immediate FALSE check:
+- If any finite magma satisfies Eq1 and violates Eq2, output FALSE immediately.
 
-If neither (1) nor (2) is achievable, the answer is FALSE. Inventing intermediate algebraic claims you cannot justify is the most common failure mode and produces wrong TRUE verdicts.
+Decision rule:
+- A verified counterexample is decisive.
+- If no quick filter resolves it, continue with full proof or counterexample workflow.
 
-STEP 0: SOURCE-COLLAPSE LEMMAS
+### 4. Counterexample Search Ladder
+Run in this order:
 
-First check whether A is a bare law: one side is a single variable and the other side is a product term.
+1. Size-2 exhaustive
+- Enumerate all binary tables on domain `{0,1}`.
+- Evaluate Eq1 and Eq2 exactly.
 
-Only for bare laws, normalize A as follows:
-- swap the sides if needed so the single variable is on the LEFT
-- rename that bare variable to `x`
-- on the product side, keep full bracketing
-- every occurrence of the bare variable stays `x`
-- rename the OTHER variables by first appearance on the product side to `y`, then `z`, then `w`, ...
+2. Size-3 targeted families
+- left-zero / right-zero / constant operations,
+- projection-like operations,
+- commutative table subsets,
+- non-idempotent and asymmetric constructions.
 
-After this normalization, compare A to exactly one of these canonical source laws:
-- `x = x*(y*(z*(x*y)))`  -> LEFT PROJECTION: `p*q = p`
-- `x = x*((y*z)*(z*z))` -> LEFT PROJECTION: `p*q = p`
-- `x = (((y*z)*x)*z)*x` -> RIGHT PROJECTION: `p*q = q`
+3. Algebraic parametric families
+- modular-linear forms, for example `x*y = a x + b y + c (mod n)`.
+- scan small primes and moduli.
 
-Examples:
-- `a = a*((b*c)*(c*c))` normalizes to `x = x*((y*z)*(z*z))`
-- `m = (((n*p)*m)*p)*m` normalizes to `x = (((y*z)*x)*z)*x`
+4. Boolean-like operators
+- xor / and / or / implication-like tables.
 
-If a collapse lemma fires, evaluate B under that projection and stop:
-- under LEFT PROJECTION, every product collapses to its leftmost variable
-- under RIGHT PROJECTION, every product collapses to its rightmost variable
-- if both sides of B collapse to the same variable, answer TRUE; otherwise FALSE
+5. Random + local improvement
+- random tables with hill-climb mutation to satisfy Eq1 first,
+- once Eq1 is near-satisfied, optimize for Eq2 violation.
 
-NON-BARE CONSTANT-PRODUCT LEMMA
+Stop immediately when a verified counterexample appears.
 
-Also check this non-bare source family:
-- normalize A by renaming variables by first appearance, but keep full bracketing
-- if normalized A has LEFT side exactly `x*y`
-- and the RIGHT side is a product term `U * V`
-- and every occurrence of `x` on the RIGHT side lies in `V` and none lies in `U`
+### 5. Validation Protocol
+For any candidate table:
+1. Verify Eq1 on all assignments of Eq1 variables.
+2. If Eq1 passes, check Eq2 on all assignments, or find one failing witness.
+3. Report:
+- domain,
+- full operation table,
+- one explicit failing assignment for Eq2,
+- value trace of both sides on that assignment.
 
-then use CONSTANT-PRODUCT collapse:
-- every non-variable product term collapses to the same symbol `c`
-- a single variable stays itself
-- if both sides of B collapse to the same symbol, answer TRUE; otherwise FALSE
+Never output FALSE without this full verification.
 
-Example:
-- `x*y = y*((z*w)*x)` fits this family
-- under CONSTANT-PRODUCT collapse, both `((z*x)*y)*x` and `x*x` collapse to `c`
+### 6. Heuristic Prioritization Signals
+Use these to rank candidates:
+- lower Eq1 complexity is often easier to satisfy randomly,
+- low subterm overlap from Eq1 to Eq2 suggests likely non-implication,
+- Eq2 structurally stricter than Eq1 suggests higher falsification chance,
+- asymmetric variable occurrences often produce easy violating assignments.
 
-STEP 0B: BARE-SOURCE CONTRADICTION MOTIFS
+These signals guide search order only.
 
-Apply this step only if A is bare and STEP 0 did not fire.
+### 7. Counterexample-Friendly Candidate Templates
+Useful quick templates:
+- constant row or column tables,
+- left projection (`x*y=x`) variants,
+- right projection (`x*y=y`) variants,
+- near-projection with one altered cell,
+- affine or modular tables with small modulus.
 
-For STEP 0B, do not do a full rename.
-- only swap sides if needed so the single variable side is on the LEFT
-- then work on the PRODUCT side exactly as written
-- treat the lone variable on the LEFT as the distinguished variable for this step
+Template mutation trick:
+- keep cells preserving Eq1 behavior,
+- perturb cells frequently touched by Eq2's distinctive subterms.
 
-Compute these source-only features of the product side:
-- `rhsVars(A)` = number of distinct variables on the product side
-- `rhsTotals(A)` = sorted occurrence counts on the product side only, written without separators
-- reminders for `rhsTotals(A)`:
-  - if the counts are `2,2,1`, then `rhsTotals=122`, never `221`
-  - if the counts are `3,1,1`, then `rhsTotals=113`
-  - if the counts are `2,1,1,1`, then `rhsTotals=1112`
-- `Lx(A)` = whether the leftmost variable on the product side is `x`
-- `Rx(A)` = whether the rightmost variable on the product side is `x`
-- `xTop(A)`:
-  - `left` if, at the top product split `U*V`, the variable `x` occurs only in `U`
-  - `right` if `x` occurs only in `V`
-  - `both` if `x` occurs in both `U` and `V`
-- `square(A)` = whether the product side contains a repeated square subterm like `u*u`
-- `topShape(A)`:
-  - `v-m` if the product side is `(variable * product)`
-  - `m-v` if it is `(product * variable)`
-  - `m-m` if both top children are products
-
-Worked example: for `x = y*((z*x)*z)`, product side uses `{x,y,z}` so `rhsVars=3`; counts `x:1, y:1, z:2` → `rhsTotals=112`; leftmost `y`, rightmost `z` → `Lx=FALSE, Rx=FALSE`; at top split `y * ((z*x)*z)`, `x` occurs only on the RIGHT → `xTop=right`; `topShape=v-m`. Another: `x = x*(y*((x*z)*y))` has counts `x:2, y:2, z:1` → `rhsTotals=122`, `xTop=both` (x in both top children).
-
-If any contradiction motif matches, answer TRUE immediately:
-- C1: `rhsVars(A)=4`, `Lx(A)=FALSE`, `Rx(A)=FALSE`
-- C2: counts `3,1,1`, `Lx(A)=FALSE`, `Rx(A)=FALSE`
-- C3: `Lx(A)=FALSE`, `xTop(A)=left`, `square(A)=TRUE`, `topShape(A)=m-v`
-- C4: counts `2,1,1`, `Lx(A)=FALSE`, `Rx(A)=FALSE`, `xTop(A)=right`, `topShape(A)=v-m`
-- C5: counts `2,1,1,1`, `Lx(A)=FALSE`, `Rx(A)=FALSE`, `xTop(A)=right`, `topShape(A)=v-m`
-- C6: `rhsVars(A)=3`, `xTop(A)=right`, `topShape(A)=v-m`, exactly two `x` occurrences
-- C7: `rhsVars(A)=3`, `Lx(A)=FALSE`, `Rx(A)=FALSE`, `xTop(A)=left`, `topShape(A)=m-v`, exactly two `x` occurrences
-- C8: `rhsVars(A)=3`, `Lx(A)=TRUE`, `xTop(A)=left`, `topShape(A)=m-v`
-- C9: counts `2,2,1`, `Lx(A)=TRUE`, `Rx(A)=FALSE`, `xTop(A)=both`, `topShape(A)=v-m`
-- C10: counts `2,2,1`, `Lx(A)=FALSE`, `Rx(A)=TRUE`, exactly two `x` occurrences
-- C11: counts `3,1,1`, `Lx(A)=FALSE`, `Rx(A)=FALSE`, `xTop(A)=right`, `topShape(A)=v-m`
-- C12: counts `3,1,1`, `Lx(A)=FALSE`, `Rx(A)=FALSE`, `xTop(A)=left`, `topShape(A)=m-v`
-- C13: counts `2,1,1,1`, `Lx(A)=FALSE`, `Rx(A)=TRUE`
-- C14: B is bare, counts `3,1,1`, `Rx(A)=TRUE`, `square(A)=FALSE`
-
-STEP 1: COMPUTE FEATURES EXACTLY
-
-For each equation `E: L = R`, count variable letters on each side separately.
-
-WORKED EXAMPLE: `x = y * (y * ((x * y) * x))`
-- left side variables: `[x]` so left count = 1
-- right side variables: `[y, y, x, y, x]` so right count = 5
-- `size(E) = 1 + 5 = 6`
-- `vars(E) = 2` because only `{x, y}`
-- `imb(E) = |1-2| + |0-3| = 4`
-- `bare(E) = TRUE` because one side is a single variable
-- `LP(E) = FALSE` because leftmost vars are `x` and `y`
-- `RP(E) = TRUE` because rightmost vars are both `x`
-- `SET(E) = FALSE` because left uses `{x}` and right uses `{x,y}`
-- `XOR(E) = FALSE` because parity does not match
-- `AB(E) = FALSE` because exact counts do not match
-
-Compute for both A and B:
-- `size(E)` = total variable occurrences on both sides
-- `vars(E)` = number of distinct variables
-- `imb(E)` = sum of absolute left/right count differences
-- `bare(E)` = one side is a single variable
-- `LP(E)` = leftmost variable matches across the two sides
-- `RP(E)` = rightmost variable matches across the two sides
-- `SET(E)` = both sides use the same variable set
-- `XOR(E)` = every variable has the same parity on both sides
-- `AB(E)` = every variable has exactly the same count on both sides
-
-Reminder for `vars(E)`:
-- count distinct variable LETTERS only
-- multiplicity does not matter
-- example: `x*y = (x*(x*z))*x` has `vars = 3` because the set is `{x,y,z}`
-
-STEP 2: SEPARATOR TESTS
-
-If `LP(A)` and not `LP(B)`: FALSE.
-If `RP(A)` and not `RP(B)`: FALSE.
-If `SET(A)` and not `SET(B)`: FALSE.
-If `XOR(A)` and not `XOR(B)`: FALSE.
-If `AB(A)` and not `AB(B)`: FALSE.
-
-One separator means FALSE immediately.
-
-STEP 3: FALSE GUARD
-
-G1: If all of these hold, answer FALSE:
-- `bare(A)` is true
-- `bare(B)` is false
-- `size(A) = size(B)`
-- `vars(B) < vars(A)`
-- `imb(B) > imb(A)`
-- `XOR(A)` is true
-
-G2: If all of these hold, answer FALSE:
-- `bare(A)` is true
-- `vars(A) = 2`
-- `bare(B)` is false
-- `vars(B) > vars(A)`
-- `size(B) >= size(A)`
-
-G3: If all of these hold, answer FALSE:
-- `bare(A)` is false
-- `vars(A) >= 5`
-- `bare(B)` is false
-- `vars(B) < vars(A)`
-- `size(B) = size(A)`
-
-G4: If all of these hold, answer FALSE:
-- `bare(A)` is false
-- `bare(B)` is false
-- `size(B) = size(A)`
-- `vars(B) <= vars(A) - 2`
-
-STEP 4: STRUCTURAL RULES
-
-Let `sA=size(A)`, `sB=size(B)`, `vA=vars(A)`, `vB=vars(B)`, `iA=imb(A)`, `iB=imb(B)`.
-
-Apply in order, stopping at the first match:
-- T4: if `bare(A)` is true and `vA >= 4` and `vB = 2`, answer TRUE.
-- T6: if `bare(A)` is true and `RP(A)` is false and `XOR(A)` is true and `vB = 2` and `RP(B)` is true, answer TRUE.
-- T7: if `bare(A)` is false and `vA = 3` and `iA = 2` and `vB = 3` and `XOR(B)` is false, answer TRUE.
-- T8: if `vA = 3` and `XOR(A)` is false and `bare(B)` is true and `RP(B)` is false, answer TRUE.
-- F1: if `vB = vA`, answer FALSE.
-- F2: if `iB < iA`, answer FALSE.
-- F3: if `sB < sA`, answer FALSE.
-- T1: if `bare(A)` is true and `vA >= 3` and `sB > sA`, answer TRUE.
-- T2: if `bare(A)` is true and `bare(B)` is true and `vA >= 3` and `vB > vA` and `iB > iA`, answer TRUE.
-- T5: if `vB < vA` and `iB > iA`, answer TRUE.
-
-STEP 5: EXTENDED RULES
-
-Apply only if nothing above fired.
-
-- D3: if every variable in A appears the same TOTAL number of times across both sides, and `vB < vA`, and B is a bare law of the form `x = x * (...)`, answer TRUE.
-- D4: otherwise FALSE.
-
-Example for D3:
-- `x = ((y*x)*y)*(z*z)` has total counts `x:2, y:2, z:2`, so the totals are uniform
-
-REASONING STYLE
-
-State:
-- the computed features,
-- whether a source-collapse lemma or contradiction motif fired,
-- whether any separator or guard fired,
-- and which final rule decided the verdict.
-
-Be concise. If no listed rule proves TRUE, answer FALSE.
-
-OUTPUT FORMAT (use exact headers, no extra formatting):
-VERDICT: TRUE or FALSE
-REASONING: non-empty explanation
-PROOF: required if VERDICT is TRUE, empty otherwise
-COUNTEREXAMPLE: required if VERDICT is FALSE, empty otherwise
-
-FINAL LINE (mandatory)
-After the VERDICT/REASONING/PROOF/COUNTEREXAMPLE block, emit one final line containing exactly `\boxed{TRUE}` or `\boxed{FALSE}` matching your VERDICT. No text after it.
+---
+Output format (use exact headers without any additional text or formatting):
+VERDICT: must be exactly TRUE or FALSE (in the same line).
+REASONING: must be non-empty.
+PROOF: required if VERDICT is TRUE, empty otherwise.
+COUNTEREXAMPLE: required if VERDICT is FALSE, empty otherwise.
