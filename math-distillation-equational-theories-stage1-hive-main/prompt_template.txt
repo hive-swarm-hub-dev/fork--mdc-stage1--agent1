@@ -1,75 +1,67 @@
-You are a mathematician specializing in equational theories of magmas.
-Your task is to determine whether Equation 1 ({{ equation1 }}) implies Equation 2 ({{ equation2 }}) over all magmas.
+You are deciding whether Equation 1 ({{ equation1 }}) implies Equation 2 ({{ equation2 }}) over all magmas.
+
+This is a **deterministic classifier**, not free-form proving. Work like pen-and-paper. Apply the rules below in order. Stop at the first decisive rule. If no rule returns FALSE, return TRUE.
+
+Call Eq1 the source `A` and Eq2 the target `B`. Each side is a binary tree of variables with a single binary operation `*`.
 
 ---
-## DECISION CALIBRATION (read carefully)
+## Step 1 — Extract structural features
 
-Implication problems split roughly 50/50 between TRUE (Eq1 logically forces Eq2) and FALSE (some magma satisfies Eq1 but violates Eq2). DO NOT default to FALSE just because counterexamples are concrete and proofs are abstract. Both verdicts require evidence:
+For each side of `A` and `B`, compute (cheaply, in your head):
+- **leaves**: list of variables in left-to-right order
+- **leftmost / rightmost** leaf
+- **left depth**: number of left-edges from root to the leftmost leaf
+- **right depth**: number of right-edges from root to the rightmost leaf
+- **vars(E)**: number of distinct variables in equation E
+- **dup(E)**: total leaves minus vars(E) (i.e. how many repeated occurrences)
 
-- Output **FALSE** only when you have an explicit verified finite counterexample magma (an operation table where Eq1 holds for all relevant assignments and Eq2 fails on at least one).
-- Output **TRUE** when, after a serious search, no counterexample appears across small magmas (sizes 2–4, projection-like, modular, boolean-like families) AND there is at least one plausible algebraic reason for Eq1 to force Eq2 (substitution chain, term-rewriting, structural collapse).
-- "I cannot find one" is NOT the same as "none exists" — but if you have honestly tried the standard families below and nothing falsifies Eq2, your prior should shift toward TRUE, not toward a defensive FALSE.
+This reduces both equations to a small fixed feature vector.
 
 ---
-## CHEAT SHEET: EQUATIONAL THEORIES IMPLICATION
+## Step 2 — TRUE shortcuts (return TRUE on match)
 
-### 1. Objective
-- Given Eq1 (`L1 = R1`) and Eq2 (`L2 = R2`), decide whether Eq1 implies Eq2 over all magmas.
-- Strategy:
-  - Run a quick TRUE check (structural filters) AND a quick FALSE check (counterexample search) in parallel.
-  - Stop as soon as one branch resolves the question; otherwise commit based on the weight of evidence.
+Apply in order. Stop at the first match.
 
-### 2. Core Principles (symmetric)
-- A single verified finite counterexample is decisive for FALSE.
-- Failure to find a counterexample in standard small families, combined with a plausible substitution argument, is decisive for TRUE.
-- Treat both directions as equally likely a priori.
+`X1` **Identity**: If both sides of `B` are syntactically the same (same tree), return TRUE.
+   - Example: `x*(y*z) = x*(y*z)` is trivially true.
 
-### 3. Fast Structural Filters
-Immediate TRUE checks:
-- Eq2 tautology: `L2 == R2`.
-- Eq2 is Eq1 up to variable renaming or side swap.
-- Eq2 is obtainable from Eq1 by direct substitution (e.g. swap a variable for a term that Eq1 makes equal to it).
-- Eq1 has very strong collapse or projection behavior forcing trivial structure.
+`X2` **Renaming/swap**: If `A` and `B` are the same equation up to a single consistent renaming of variables (and optionally a swap of which side is "left" vs "right"), return TRUE.
+   - Example: `A: x = y*x` and `B: a = b*a` are the same up to renaming.
 
-Immediate FALSE check:
-- If a size-2 or size-3 magma (projection, constant, boolean-like) satisfies Eq1 and violates Eq2, output FALSE.
+`X3` **Collapsing source**: If one side of `A` is a single variable that does NOT appear on the other side, then `A` forces every magma to collapse to one element, so `A` implies anything. Return TRUE.
+   - Example: `A: x = y*z` (LHS has `x`, not in RHS), so `A` forces all elements equal.
 
-### 4. Counterexample Search Ladder
-Run in this order, but stop early if Eq1 and Eq2 are clearly related by direct substitution:
+`X4` **Substitution**: If you can derive `L_B == R_B` by substituting subterms using `A` (using `L_A = R_A` rewrites), return TRUE. Sketch the rewrite chain in your justification.
 
-1. Size-2 exhaustive — enumerate all binary tables on `{0,1}`.
-2. Size-3 targeted families — left-zero, right-zero, constant, projection-like, commutative subsets.
-3. Algebraic parametric families — `x*y = a x + b y + c (mod n)` for small primes/moduli.
-4. Boolean-like operators — xor / and / or / implication-like tables.
-5. Random + local hill-climb — random tables tuned to satisfy Eq1, then search Eq2 violations.
+---
+## Step 3 — Forced-behavior identifications (use to argue TRUE or to find FALSE)
 
-Stop immediately when a verified counterexample appears.
+These identify simple operation tables that `A` forces. Once you know `A` forces a specific operation, you can directly check whether `B` holds in that operation.
 
-If you finish all five levels without a counterexample, do NOT default to FALSE. Re-examine whether Eq1's terms actually impose enough structure on Eq2's terms (substitution, congruence). If yes, conclude TRUE.
+`F1` If `A` reduces (up to renaming/swap) to `x = x*y` with `x ≠ y`, then `A` forces **left projection**: `a*b = a` for all a,b. Now check whether `B` holds in left projection — if yes, return TRUE; if no, return FALSE.
 
-### 5. Validation Protocol
-For any candidate counterexample:
-1. Verify Eq1 on all assignments of Eq1 variables.
-2. If Eq1 passes, check Eq2 on all assignments, or find one failing witness.
-3. Report: domain, full operation table, one explicit failing assignment for Eq2, value trace of both sides on that assignment.
+`F2` If `A` reduces to `x = y*x` with `x ≠ y`, then `A` forces **right projection**: `a*b = b`. Check `B` in right projection.
 
-Never output FALSE without this full verification.
+`F3` If both sides of `A` are products `(s*t)` and `(s*u)` with the same left child `s` but different right children, `A` forces a **left-unary** operation `a*b = f(a)` (depends only on left arg). Check `B` in such a magma.
 
-For TRUE conclusions, sketch the substitution / rewriting argument: which subterm of Eq2 reduces to which side of Eq1.
+`F4` Mirror of F3 for right child → forces right-unary `a*b = g(b)`.
 
-### 6. Heuristic Prioritization Signals
-- Lower Eq1 complexity → easier to satisfy randomly → counterexamples easier to find.
-- Low subterm overlap from Eq1 to Eq2 → counterexamples more likely.
-- High subterm overlap (Eq2 looks reachable from Eq1 by substitution) → TRUE more likely.
-- Eq2 structurally stricter than Eq1 → counterexamples more likely.
+---
+## Step 4 — Counterexample search (only if no rule above fires)
 
-### 7. Counterexample-Friendly Candidate Templates
-- constant tables, left projection (`x*y=x`), right projection (`x*y=y`), near-projection with one altered cell, affine/modular tables with small modulus.
+Try small magmas to falsify `A → B`. Use ONE concrete table per attempt; verify `A` holds for all assignments and find a `B` violation.
+
+Order: size-2 boolean tables (xor, and, or, projection, constant) → size-3 modular forms (`a*b = (αa+βb+γ) mod 3`) → size-4 specialized tables. Stop at the first verified counterexample.
+
+---
+## Step 5 — Default
+
+If no FALSE-returning rule fires, **return TRUE**. Do NOT default to FALSE just because you cannot find a counterexample after limited search; absence of a counterexample combined with absence of obvious algebraic obstruction is evidence FOR TRUE.
 
 ---
 ## OUTPUT FORMAT (mandatory)
 
-Write your reasoning first (concise — under 250 words). Then end your reply with EXACTLY this two-line block, with NO further text after:
+Write a brief justification (under 250 words) naming which rule (X1/X2/X3/X4/F1/F2/F3/F4 or counterexample) decided the case. Then end your reply with EXACTLY this two-line block, with NO further text after:
 
 VERDICT: TRUE
 \boxed{TRUE}
